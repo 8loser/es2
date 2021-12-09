@@ -1,0 +1,134 @@
+#map read es2.map
+#var area {}
+#split 32 1
+
+#nop #split 0 1 0 -120
+#nop #map offset 1 122 -20 -20
+
+#map flag vtmap on;
+
+#PATHDIR {nd} {su} {33}
+#PATHDIR {su} {nd} {20}
+
+#PATHDIR {nu} {sd} {17}
+#PATHDIR {sd} {nu} {36}
+
+#PATHDIR {eu} {wd} {18}
+#PATHDIR {wd} {eu} {40}
+
+#PATHDIR {wu} {ed} {24}
+#PATHDIR {ed} {wu} {34}
+
+#PATHDIR {enter} {out} {5}
+#PATHDIR {out} {enter} {7}
+
+#ACTION {^你必須先把%W門打開﹗$} { #map undo; }
+#ACTION {^你無法通過﹗$} { #map undo;}  
+#ACTION {^你不能進去。$} { #map undo;}
+#ACTION {^%s這裡明顯的出口有%s%w%s.} {#map roomflag static on}
+
+#act {^%W -\s}
+{
+   #if {$staticStatus}
+   {
+      #map roomflag static on;
+   };
+   
+   #map get {ROOMAREA} {existArea};
+   #if {"$existArea"==""} {
+      #map set {ROOMAREA} {$area};
+   };
+   #map get {roomflags} {flag};
+   #map get {roomvnum} {num};
+   #map get {roomarea} {roomarea};
+   #map get {roomnote} {roomnote};
+   #map get {ROOMNAME} {roomname};
+   #if {"$roomname"==""}{
+      #map set {ROOMNAME} {%1};
+   };
+   
+   #show $flag, $num, $roomarea, $roomnote;
+   #list {npc} {clear};
+}
+
+#act {^  %W\(%*\)$}
+{
+   #list {npc} {add} {%1 %2}
+}
+
+#alias {undo} {#map undo}
+#alias {leave} {#map leave}
+#alias info {#map info}
+#alias {here} { #map get}
+#alias goto {#map goto %1}
+#alias run {#map run {%1} {0.1}}
+#alias del {#map delete %1}
+#alias {on} { #map roomflag static on}
+#alias {off} { #map roomflag static off}
+#alias {startStatic} {#var staticStatus 1}
+#alias {stopStatic} {#var staticStatus 0}
+#alias {write} { #map write es2.map}
+#alias {read} { #map read es2.map}
+#alias start {#map {flag} {static} {off}}
+#alias stop {#map {flag} {static} {on}}
+#alias link {#map exit %1 vnum %2}
+#alias list {#map list}
+#alias area {#map set {ROOMAREA} {%1}}
+#alias mark {#map set roomsymbol {%1} }
+#alias jump {#map jump %1 %2 }
+#alias hide {#map roomflag hide}
+#alias addNote {
+   #map get {roomnote} {roomnote};
+   #if {"$roomnote"==""} {
+      #map set {roomnote} {%1};
+   };
+   #else {
+      #map set {roomnote} {$roomnote %1};
+   }
+}
+#alias note {
+   #if {"%1"==""}{
+      addNote {$npc[1]}
+   };
+   #else {
+      addNote {$npc[%1]}
+   }
+}
+#alias clearNote {#map set {roomnote} {};}
+
+
+#nop 设置 void 房间
+#alias void 
+{
+    #if {"%1" == ""}
+    {
+       #echo {please provide the void room location: void e = #map insert e void}
+    }
+    {
+       #map insert %1 void;
+    };
+};
+
+#nop 设置新房间，避免已存在房间被错误link在一起
+#alias dig 
+{
+    #if {"%1" == ""}
+    {
+       #echo {please provide the new room location: new e = create new room at entry e}
+    }
+    {
+       #map dig {%1} {new}
+    };
+}
+
+#alias confirm
+{
+   stop;
+   #loop {1} {32} {vnum} {
+      #delay {$vnum/2} { 
+         #show {goto $vnum};
+         run $vnum;
+      };
+      #map roomflag static on;
+   };
+}

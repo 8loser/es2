@@ -1,0 +1,31 @@
+#ALIAS {WearArmor}
+{
+	get $equip;
+}
+
+#ACTION {^你撿起一件%W。} {
+	wear all;
+}
+
+#ACTION {^你附近沒有這樣東西。} {
+	#if {"$equip"=="armor"} {
+		#var equip robe;
+		WearArmor;
+	};
+	#elseif {"$equip"=="robe"} {
+		get silk cloth from rack;
+		wear silk cloth;
+	};
+}
+
+#ACTION {^你穿上一件%W。} {
+	#UNACTION {^你穿上一件%W。};
+	GetIcy;
+	Notice kill Equip;
+	#class Equip kill;
+	wield sword;
+	#var ready 1;
+}
+
+#var equip armor;
+Notice read Equip;

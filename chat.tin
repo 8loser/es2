@@ -1,0 +1,21 @@
+#ACTION {^{【閒聊】|【謠言】}%*}
+{
+    Alert {%0};
+}
+
+#ACTION {^【故事】%W}
+{
+    Alert {%0};
+    #regex {%1} {的基本會員！}
+    {#nop}
+    {
+        #var warStatus {1};
+        #delay {clearWarStatus} {#unvar warStatus} {900};
+    }
+}
+
+#ALIAS {Unchat}
+{
+    #UNACTION {^【故事】%*};
+    #UNACTION {^{【閒聊】|【謠言】}%*};
+}

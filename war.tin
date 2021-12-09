@@ -1,0 +1,183 @@
+#READ reset.tin
+#UNVARIABLE {heal}
+
+#ALIAS {Prepare}
+{
+	EnableAll;
+	#class Equip read Equip.tin;
+	WearArmor;
+	#delay {2} {
+		#if {$ready==1} {
+			n;
+			#2 eat cake;
+			#2 eat ice;
+			PutFood;
+			SafeRoom;
+		};
+	};
+	#delay {4} {
+		#if {$ready==1} {
+			#unvar ready;
+			#class GetBag read GetBag.tin;
+			GetBag;
+		};
+	};
+	#delay {8} {
+		#if {$ready==1} {
+			FillPill;
+		}
+	};
+}
+
+#ALIAS {FillPill} {
+	#map run 692;
+	DropPill;
+	GetPill;
+	Home;
+}
+
+#ALIAS {WarHeal}
+{
+	#UNVARIABLE {heal};
+	#if { $health[force]<600 }
+	{
+		#VARIABLE {heal} {eat force}
+	};
+	#elseif { $health[keeLimit]<=70 }
+	{
+		#VARIABLE {heal} {rub paste}
+	};
+	#elseif { $health[kee]/$health[keeMax]<=0.7 }
+	{
+		#VARIABLE {heal} {eat recover}
+	};
+	#elseif { $health[gin]/$health[ginMax]<=0.7 }
+	{
+		#VARIABLE {heal} {exert regenerate}
+	};
+	#elseif { $health[sen]/$health[senMax]<=0.7 }
+	{
+		#VARIABLE {heal} {exert refresh}
+	};
+
+	#if {&stunStatus} {exert mobilize};
+	#if {&heal} {
+		EnableAgain;
+		#send {$heal};
+	};
+	#else {
+		time;
+	}
+}
+
+#ALIAS {EnableAgain}
+{
+	#ACTION {^{你現在沒有空！}} {
+		DisableAgain;
+		exert mobilize;
+		#send {$heal};
+	};
+}
+
+#ALIAS {DisableAgain}
+{
+	#UNACTION {^{你現在沒有空！}};
+}
+
+#ALIAS {EnablePutStone}
+{
+	#ACTION {^你將一顆%W放進%W。$}
+	{
+		#math {stoneCount} {$stoneCount+1};
+		#if {$stoneCount>25} {
+			time;
+			#var {stoneCount} {0};
+		};
+		put stone in bag $bagNumber;
+	};
+	#ACTION {^%W已經放不下任何東西了。$}
+	{
+		#math {bagNumber} {$bagNumber+1};
+		put stone in bag $bagNumber;
+	};
+}
+
+#ACTION {^你拿起一粒綠色藥丸放入口中。$} {#math {forceCount} {$forceCount+1};}
+#ACTION {^你拿出黑色藥膏擦在傷口上。$} {#math {pasteCount} {$pasteCount+1};}
+#ACTION {^你拿起一粒紅色藥丸放入口中。$} {#math {recoverCount} {$recoverCount+1};}
+
+#ACTION {降魔石在途中停頓，並打開了虛空，製造了一道傳送們．(teleport)$}
+{
+	#var recoverCount 0;
+	#var pasteCount 0;
+	#var forceCount 0;
+    teleport;
+	#TICKER {WarTicker} {
+		hp;
+		#delay {0.5} {WarHeal};
+	} {1};
+}
+
+
+#ACTION {^恭喜{你|妳}！成功打退了入侵天朝的妖魔兵團．請儘快認領本次的獎勵(getrewards)．}
+{
+	Alert {recover: $recoverCount};
+	Alert {paste: $pasteCount};
+	Alert {force: $forceCount};
+    getrewards;
+	#UNTICKER {WarTicker};
+	EnablePutStone;
+	#VARIABLE {bagNumber} {1};
+	#VARIABLE {stoneCount} {0};
+	put stone in bag;
+}
+
+#ACTION {^沙漠的中央突然出現了一道傳送門，{你|妳}無法抵抗被吸了進去．$}
+{
+	#UNTICKER {WarTicker};
+    SafeRoom;
+	#delay {1} {
+		#2 drop herb;
+		drop gold;
+		drop bag;
+	};
+	#delay {2} {
+		FillPill;
+	};
+}
+
+#nop 羅煞口中吐出紫色的煙霧。
+#nop 你一不小心將煙霧吸入, 嗆得你咳嗽連連。
+
+#nop 幻魔冷笑一下, 你周圍的景色似乎有些變化。
+#nop 你被幻魔所造出的幻象嚇破了膽。
+
+#ACTION {^{髮妖的頭髮像是有生命一樣, 想要把你綁住。|你被血烏鴉狠狠地咬了一塊肉下來。}$}
+{
+	Notice Stun;
+	#var stunStatus 1;
+}
+
+#ACTION {^你覺得一股內力走遍全身所有穴道，登時覺得舒暢無比。$} {
+	#unvar stunStatus;
+}
+
+#GAG {{(?<!你)擊中(?!你)}}
+#GAG {^%W被%W殺死, 它的屍體像一陣風般消失了。$}
+#GAG {^%W被你的隊友%W殺死了。$}
+#GAG {^你得到一顆%W石。$}
+#GAG {^看起來%W想殺死你﹗$}
+#GAG {{(?<!你)將一顆\W+?石放進\W+?。}$}
+#GAG {^{\W+(?<!你)死了。}$}
+
+#ACTION {\W說道﹕team with %w}
+{
+	team with %1;
+}
+
+#unvar stunStatus;
+#unvar ready;
+
+#config log plain;
+#format logTime {%t} {%m%d_%H%M};
+#LOG {APPEND} {war_$account_$logTime.log};

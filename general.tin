@@ -1,0 +1,185 @@
+#ALIAS {GetIcy}
+{
+    get icy ribbon from rack;
+    get icy girth from rack;
+    get icy cloth from rack;
+    get icy boots from rack;
+    wear all;
+}
+
+#ALIAS {PutIcy}
+{
+    unmark icy ribbon;
+    unmark icy girth;
+    unmark icy cloth;
+    unmark icy boots;
+
+    put icy ribbon in rack;
+    put icy girth in rack;
+    put icy cloth in rack;
+    put icy boots in rack;
+}
+
+#ALIAS {GetPill}
+{
+    DropPill;
+	get 20 recover;
+	get 20 paste;
+	get 20 force;
+}
+
+#ALIAS {DropPill}
+{
+	drop recover;
+	drop paste;
+	drop force;
+}
+
+#ALIAS {GetLearnPill}
+{
+	get 200 regenerate;
+	get 100 paste;
+	get 100 recover;
+}
+
+#ALIAS {DropLearnPill}
+{
+	drop regenerate;
+	drop paste;
+	drop recover;
+}
+
+#ALIAS {PutFood}
+{
+	put cake in box;
+	put ice in box;
+}
+
+#ALIAS {GetFood}
+{
+	get cake from box;
+	get ice from box;
+}
+
+#ALIAS {EnableAll}
+{
+    #if {"$account"=="sod"} {
+        enable force anti-force;
+        enable dodge anti-steps;
+        enable sword six-sky-sword;
+        enable parry six-sky-sword;
+        enable spells nyrin-spells;
+    };
+    #elseif {"$account"=="tset"} {
+        enable force gouyee;
+        enable dodge chaos-steps;
+        enable move chaos-steps;
+        enable sword bhsword;
+        enable parry bhsword;
+        enable spells necromancy;
+        enable chanting buddhism;
+        enable scratching taocurse;
+    };
+    #elseif {"$account"=="wifi"} {
+        enable force joinn-force;
+        enable chanting buddhism;
+        enable magic cynthia;
+        enable dodge chaos-steps;
+        enable sword bhsword;
+        enable parry bhsword;
+        enable unarmed wudu-strike;
+    };
+    #elseif {"$account"=="sos"} {
+        enable force saintforce;
+        enable sword bhsword;
+        enable parry bhsword;
+        enable dodge lonely-steps;
+        enable unarmed uniquezhi;
+    };
+    #elseif {"$account"=="bad"} {
+        enable force serpentforce;
+        enable sword bhsword;
+        enable parry bhsword;
+        enable dodge fish-steps;
+        enable move fish-steps;
+        enable unarmed spicyclaw;
+        enable stealing zhilunsho;
+        enable chanting buddhism;
+    };
+}
+
+#ACTION {^你必須先把%W門打開﹗$} { #map undo; }
+#ACTION {^你無法通過﹗$} { #map undo;}  
+#ACTION {^你不能進去。$} { #map undo;}
+#ACTION {^要移動請你先用 halt 終止你正在做的事。$} {#map undo}
+#ALIAS {Notice} {#echo {<081>%0<088>}}
+
+#ALIAS {mapshow}
+{
+    #map color user <138>;
+	#split 16 1;
+	#map flag vtmap on;
+}
+
+#ALIAS {mapwrite}
+{
+	#map write es2.map;
+}
+
+#ALIAS {maphide}
+{
+	#split;
+}
+
+#alias {List}
+{
+    #map list {roomnote} {%i%*%1%*};
+}
+
+#alias {Find}
+{
+    #map find {roomnote} {%i%*%1%*};
+}
+
+#alias {Run}
+{
+    #map run {%1};
+}
+
+#ALIAS {client} {
+	#ses %1 us.muds.net 4000;
+	#send {%1};
+	#VARIABLE {account} {%1};
+	#config log plain;
+	#nop #format logTime {%t} {%m%d_%H%M};
+	#nop #LOG {APPEND} {%1_$logTime.log};
+
+	#event {HOUR} {
+		#if {&lastExp}
+		{
+			#math {hourExp} {$exp-$lastExp};
+			Alert {hour Exp: $hourExp ($lastExp->$exp)};
+			#VARIABLE {lastExp} {$exp};
+		};
+		#else
+		{
+			#VARIABLE {lastExp} {$exp};
+		}
+	};
+    
+    #event {SESSION DISCONNECTED}
+    {
+        #config log plain;
+        #buffer write {$account.log};
+    }
+}
+
+#ALIAS {loginWar} {
+	#ses %1 us.muds.net 4000 loginWar.tin;
+	#send {%1};
+	#VARIABLE {account} {%1};
+}
+
+#ALIAS {Home} { #map run {天涯坊大廳} 0.1 }
+#var safeRoom {691}
+#ALIAS {SafeRoom} { #map run {$safeRoom} 0.1 }

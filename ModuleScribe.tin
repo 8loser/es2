@@ -1,0 +1,30 @@
+#ACTION {^{你畫好了一張「\W+」。}$} {
+    #math {scribeCount} {$scribeCount+1};
+    #if {$scribeCount>25} {
+        time;
+        #VARIABLE {scribeCount} {0};
+    };
+    #delay {2} {Scribe};
+}
+
+#ACTION {^這裡沒有 seal。|這裡沒有 amulet。$} {
+    Alert %0;
+    #unvar scribeItem;
+    StopScribe;
+}
+
+#ACTION {^{你的神不夠﹐無法專心畫符。}$} {
+    StopScribe
+}
+
+#ALIAS {Scribe} {
+    scribe $scribeAmulet on $scribeItem;
+}
+
+#ALIAS {StopScribe} {
+    Notice Stop Scribe;
+    #class ModuleScribe kill;
+    StartTicker;
+}
+
+#VARIABLE {scribeCount} {0}

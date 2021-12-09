@@ -1,0 +1,205 @@
+#READ reset.tin
+#ACTION {^【故事】%W} {
+    #regex {%1} {的基本會員！}
+    {#nop}
+    {
+        #var warStatus {1};
+        #delay {clearWarStatus} {#unvar warStatus} {900};
+    }
+}
+
+#ACTION {^以下為本次天朝勇士的傷害排名：}
+{
+    #unvar warStatus;
+}
+
+#act {^你的術士天眼法術失效了。$}
+{
+    #var interrupt 1;
+    #unvar auraStatus;
+}
+
+#act {^{你微一凝神﹐閉著眼睛念了幾句咒語﹐施展「術士天眼」法術。|你已經施展過術士天眼的法術了。}$}
+{
+    #unvar interrupt;
+    #var auraStatus 1;
+}
+
+#ALIAS {FightMob}
+{
+    #map get {roomvnum} {currentRoom};
+    #if {"$currentRoom"=="$fightRoomList[$fightRoomIndex][1]"}
+    {
+        #foreach {$fightRoomList[$fightRoomIndex][2]} {mob} {fight $mob}
+    };
+    #else
+    {
+        #event {END OF RUN}
+        {
+            #unevent {END OF RUN};
+            #foreach {$fightRoomList[$fightRoomIndex][2]} {mob} {fight $mob}
+        };
+        #map run {$fightRoomList[$fightRoomIndex][1]} {0.1};
+    };
+}
+
+#ALIAS {LearnSkill}
+{
+    #map get {roomvnum} {currentRoom};
+    #if {"$currentRoom"=="$masterRoom"}
+    {
+        LearnFromMaster;
+    };
+    #else
+    {
+        #event {END OF RUN}
+        {
+            #unevent {END OF RUN};
+            LearnFromMaster;
+        };
+        #map find {roomnote} {%i%*$master%*};
+        #path run 0.1;
+    }
+}
+
+#ALIAS {Condition}
+{
+    #if {$addFood} {
+        StopTicker;
+        AddFood;
+        StartTicker;
+    };
+    #elseif {$addWater}{
+        StopTicker;
+        AddWater;
+        StartTicker;
+    };
+    #elseif {!&{auraStatus}}
+    {
+        cast aura;
+    };
+    #elseif {!&{warStatus}}
+    {
+        #if {$potential >= 20 && !&{learnPass}}{
+            Notice Start Learn;
+            StopTicker;
+            #class ModuleLearn read ModuleLearn.tin;
+            LearnSkill;
+        };
+        #elseif {$health[sen]>=$health[senMax] && &{studyItem}}
+        {
+            Notice Start Study;
+            StopTicker;
+            #class ModuleStudy read ModuleStudy.tin;
+            StudyItem;
+        };
+        #elseif {$health[kee] >= $health[keeMax] && $health[keeLimit]==100}
+        {
+            Notice Start Fight;
+            #class ModuleFight read ModuleFight.tin;
+            FightMob;
+        };
+        #elseif {$health[kee]<$health[keeMax] && $health[force]>0}
+        {
+            exert recover;
+        };
+        #elseif {$health[force]==0}
+        {
+            StopTicker;
+            #class Cultivate read Cultivate.tin;
+            StartCultivate;
+        };
+        #else {
+            time;
+        };
+    };
+    #elseif {$warStatus}
+    {
+        StopTicker;
+        #class Cultivate read Cultivate.tin;
+        StartCultivate;
+    };
+    #else {
+        time
+    }
+}
+
+
+#ALIAS {StopTicker}
+{
+    Notice Stop Ticker;
+    #class {%*} kill;
+    #UNTICKER {ConditionTicker};
+}
+
+#ALIAS {StartTicker}
+{
+    Notice Start Ticker;
+    #TICKER {ConditionTicker} {
+        hp;
+        #delay {1} {Condition};
+    } {10}
+}
+
+#function {InterruptCheck}
+{
+	#if {$potential>=80 || &{warStatus}}
+	{
+        #return 1;
+	};
+	#elseif {!&{auraStatus}}
+	{
+		#return 1;
+	};
+    #elseif {$health[sen]>=$health[senMax] && &{studyItem}}
+    {
+        #return 1;
+    };
+    #else {
+        #return 0;
+    };
+}
+
+#function {CultivateInterrupt}
+{
+    #if {&warStatus}
+    {
+        #return 0;
+    };
+    #elseif {$health[kee]>=$health[keeMax] && $health[force]>=$health[forceMax]}
+    {
+        #return 1;
+    };
+    #else {
+        #return 0;
+    };
+}
+
+#unvar interrupt;
+#unvar warStatus;
+#unvar auraStatus;
+
+#unvar learnPass;
+#unvar learnSkill;
+#var master {chang chi-wei}
+#var masterRoom {704}
+
+#VARIABLE {fightStatus} {0};
+#var fightRoomIndex 1;
+#list {fightRoomList} {clear}
+#foreach
+{
+    {{1}{423}{2}{madam shu}}
+    {{1}{364}{2}{lee san}}
+    {{1}{760}{2}{ren}}
+    {{1}{738}{2}{may}}
+    {{1}{779}{2}{annihier}}
+} {mob} {#list {fightRoomList} {add} {{$mob}}}
+
+#var atmanStatus 1;
+#var forceStatus 1;
+#var manaStatus 1;
+
+#var studyItem book;
+
+#var practiceSkill {dodge}

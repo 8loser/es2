@@ -1,0 +1,137 @@
+#VARIABLE {learnSkill} {scratching}
+#VARIABLE {hiddenStatus} {0}
+#VARIABLE {safeStatus} {0}
+#VARIABLE {action2} {1}
+
+#ACTION {~^( 你\e[31m搖頭晃腦、歪歪斜斜地站都站不穩﹐眼看就要倒在地上。\e[2;37;0m )$} { LeaveFight; }
+#ACTION {~^( 你\e[31m已經陷入半昏迷狀態﹐隨時都可能摔倒暈去。\e[2;37;0m )$} { LeaveFight; }
+#ACTION {~^( 你\e[1;31m已經一副頭重腳輕的模樣﹐正在勉力支撐著不倒下去。\e[2;37;0m )$} { LeaveFight; }
+#ACTION {~^( 你\e[1;31m看起來已經力不從心了。\e[2;37;0m )$} { LeaveFight; }
+
+#ACTION {^【故事】%W} {
+    #regex {%1} {的基本會員！}
+    {#nop}
+    {
+        #VARIABLE {hiddenStatus} {1};
+        #delay {clearHiddenStatus} {#VARIABLE {hiddenStatus} {0}} {900};
+    }
+}
+
+#ACTION {^以下為本次天朝勇士的傷害排名：}
+{
+    #variable {hiddenStatus} {0};
+}
+
+#ACTION {^  內功 (force)%s﹕%s%W%s有效等級}
+{   
+    #if {"%3" == "%s無%s"}{
+        #variable {forceSkill} {0}
+    };
+    #else {
+        #variable {forceSkill} {1}
+    };
+}
+
+#ALIAS {CheckForceSkill}
+{
+    #if {&forceSkill} {
+        #nop
+    };
+    #else {
+        practice;
+	};
+}
+
+#ALIAS {LeaveFight}
+{
+    hp;halt;LearnSkill;Action2;
+}
+
+#ALIAS {Hidden}
+{
+    s;w;#2 s;#2 ed;nd;#3 ed;#2 e;se;#2 s;#3 e;s;open door;e;
+}
+
+#ALIAS {HiddenReverse}
+{
+    open door;w;n;#3 w;#2 n;nw;#2 w;#3 wu;su;#2 wu;#2 n;e;n;
+}
+
+#ALIAS {LearnSkill}
+{
+    #if {$potential > 0}{
+        WalkLearn;
+        #local learnLimit $potential;
+        #if ($learnLimit>10) {
+            #local learnLimit 10;
+        };
+        #loop {1} {$learnLimit} {learnCount} {learn $learnSkill};
+        WalkLearnReverse;
+    };
+}
+
+#ALIAS {WalkLearn} {
+    s;w;
+}
+#ALIAS {WalkLearnReverse} {
+    e;n;
+}
+
+#ALIAS {FightMob}
+{
+    fight daw;
+}
+
+#ALIAS {Vision}{
+    #if {$health[sen]>5 && $health[mana]>30}{
+        cast astral vision;    
+    };
+}
+
+#ALIAS {Scribe}{
+    #if {$health[sen]>30 && $health[mana]>50}{
+        scribe fire amulet on amulet;
+    };
+}
+
+#ALIAS {Action2}{
+    Vision;hp;Scribe;
+}
+
+#ALIAS {FightCondition}
+{
+    CheckForceSkill;
+    #if {$hiddenStatus && !$safeStatus}{
+        Hidden;
+        #VARIABLE {safeStatus} {1};
+    };
+    #elseif {!$hiddenStatus && $safeStatus}{
+        HiddenReverse;
+        #VARIABLE {safeStatus} {0};
+    };
+    #elseif {@checkFood{0.5}}{
+        AddFood;
+    };
+    #elseif {@checkWater{0.5}}{
+        AddWater;
+    };
+    #elseif {$health[kee] >= $health[keeMax] && $health[keeLimit]==100 && !$hiddenStatus}{
+        FightMob;
+    };
+    #elseif {$forceSkill && $health[force]>0 && $health[kee]<$health[keeMax]}{
+        exert recover;
+    };
+    #elseif {$action2}{
+        Action2;
+    };
+    #else {
+        time;
+    }
+}
+
+#TICKER {FightMob} {
+    hp;
+    #delay {1} {
+        FightCondition;
+    };
+} {30}

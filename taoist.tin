@@ -1,0 +1,202 @@
+#READ reset.tin
+#ACTION {^【故事】%W} {
+    #regex {%1} {的基本會員！}
+    {#nop}
+    {
+        #var warStatus {1};
+        #delay {clearWarStatus} {#unvar warStatus} {900};
+    }
+}
+
+#ACTION {^以下為本次天朝勇士的傷害排名：}
+{
+    #unvar warStatus;
+}
+
+#act {^你的陰陽眼法術失效了。$}
+{
+    #var interrupt 1;
+    #unvar astralStatus;
+}
+
+#act {^{你微一凝神﹐閉著眼睛念了幾句咒語﹐施展「陰陽眼」法術。|你已經施展過陰陽眼的法術了。}$}
+{
+    #unvar interrupt;
+    #var astralStatus 1;
+}
+
+#ALIAS {FightMob}
+{
+    #map get {roomvnum} {currentRoom};
+    #if {"$currentRoom"=="$fightRoomList[$fightRoomIndex][1]"}
+    {
+        #foreach {$fightRoomList[$fightRoomIndex][2]} {mob} {fight $mob}
+    };
+    #else
+    {
+        #event {END OF RUN}
+        {
+            #unevent {END OF RUN};
+            #foreach {$fightRoomList[$fightRoomIndex][2]} {mob} {fight $mob}
+        };
+        #map run {$fightRoomList[$fightRoomIndex][1]} {0.1};
+    };
+}
+
+#ALIAS {LearnSkill}
+{
+    #map get {roomvnum} {currentRoom};
+    #if {"$currentRoom"=="$masterRoom"}
+    {
+        learn $learnSkill from $master;
+    };
+    #else
+    {
+        #event {END OF RUN}
+        {
+            #unevent {END OF RUN};
+            learn $learnSkill from $master;
+        };
+        #map find {roomnote} {%i%*$master%*};
+        #path run 0.1;
+    }
+}
+
+#ALIAS {Condition}
+{
+    #if {$addFood} {
+        StopTicker;
+        AddFood;
+        StartTicker;
+    };
+    #elseif {$addWater}{
+        StopTicker;
+        AddWater;
+        StartTicker;
+    };
+    #elseif {!&{astralStatus}}
+    {
+        cast astral vision;
+    };
+    #elseif {!&{warStatus}}
+    {
+        #if {$potential >= 20 && !&{learnPass}}{
+            Notice Start Learn;
+            StopTicker;
+            #class ModuleLearn read ModuleLearn.tin;
+            LearnSkill;
+        };
+        #elseif {$health[sen]>=$health[senMax] && $fightStatus==0 && &{scribeItem}}
+        {
+            Notice Start Scribe;
+            StopTicker;
+            #class ModuleScribe read ModuleScribe.tin;
+            Scribe;
+        };
+        #elseif {$health[kee] >= $health[keeMax] && $health[keeLimit]==100}
+        {
+            Notice Start Fight;
+            #class ModuleFight read ModuleFight.tin;
+            FightMob;
+        };
+        #elseif {$health[kee]<$health[keeMax] && $health[force]>0}
+        {
+            exert recover;
+        };
+        #elseif {$health[force]==0}
+        {
+            StopTicker;
+            #class Cultivate read Cultivate.tin;
+            StartCultivate;
+        };
+        #else {
+            time;
+        };
+    };
+    #elseif {$warStatus}
+    {
+        StopTicker;
+        #class Cultivate read Cultivate.tin;
+        StartCultivate;
+    };
+    #else {
+        time
+    }
+}
+
+
+#ALIAS {StopTicker}
+{
+    Notice Stop Ticker;
+    #UNTICKER {ConditionTicker};
+    #class {%*} kill;
+}
+
+#ALIAS {StartTicker}
+{
+    Notice Start Ticker;
+    #TICKER {ConditionTicker} {
+        hp;
+        #delay {1} {Condition};
+    } {10}
+}
+
+#function {InterruptCheck}
+{
+	#if {$potential>=80 || &{warStatus}}
+	{
+        #return 1;
+	};
+	#elseif {!&{astralStatus}}
+	{
+		#return 1;
+	};
+    #elseif {$health[sen]>=$health[senMax] && &{scribeItem}}
+    {
+        #return 1;
+    };
+    #else {
+        #return 0;
+    };
+}
+
+#function {CultivateInterrupt}
+{
+    #if {&warStatus}
+    {
+        #return 0;
+    };
+    #elseif {$health[kee]>=$health[keeMax] && $health[force]>=$health[forceMax]}
+    {
+        #return 1;
+    };
+    #else {
+        #return 0;
+    };
+}
+
+#unvar interrupt;
+#unvar warStatus;
+#unvar astralStatus;
+
+#unvar learnPass;
+#var learnSkill {magic}
+#var master {taolord}
+#var masterRoom {472}
+
+#var scribeItem {amulet}
+#var scribeAmulet {fire amulet}
+
+#VARIABLE {fightStatus} {0};
+#var fightRoomIndex 1;
+#variable {fightRoomList}
+{
+  {1}{{1}{778}{2}{eelon}}
+  {2}{{1}{779}{2}{annihier}}
+}
+
+#var atmanStatus 1;
+#var forceStatus 1;
+#var manaStatus 1;
+
+#var practiceSkill {dodge}

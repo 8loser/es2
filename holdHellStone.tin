@@ -1,0 +1,93 @@
+#read reset.tin;
+
+#ACTION {^你將一顆%W緊緊的握在手上。} {
+    hp;
+    #delay {Condition} {
+        HoldStoneCondition
+    } {1};
+}
+
+#ACTION {^你拿起一粒紅色藥丸放入口中。} {
+    hp;
+    #delay {Condition} {
+        HoldStoneCondition
+    } {2};
+}
+
+#ACTION {^你找不到 %* 這樣東西。} {
+    Stop;
+}
+
+#ACTION {^這裡沒有這個人。$} {#unvar collector}
+
+#nop 紅色-膂力
+#nop 橘色-膽色
+#nop 黃色-悟性
+#nop 綠色-靈性
+#nop 藍色-定力
+#nop 青色-容貌
+#nop 紫色-根骨
+#nop 白色-福緣
+#nop 銀色-內力
+#nop 黑色-靈力
+#nop 金色-法力
+
+#ACTION {^這是一顆%W的} {
+    #if {"%1"=="紅色"
+        || "%1"=="橘色"
+        || "%1"=="藍色"
+        || "%1"=="青色"
+        || "%1"=="紫色"
+        || "%1"=="白色"
+        || "%1"=="銀色"
+        || "%1"=="黑色"
+        || "%1"=="金色"} {
+        hold $stone;
+        hp;
+        #delay {Condition} {
+            HoldStoneCondition
+        } {1};
+    };
+    #else {
+        #if {&collector} {give collector $stone};
+        #else {drop $stone};
+        HoldStoneCondition;
+    };
+}
+
+#ALIAS {HoldStoneCondition}
+{
+    #if {$health[keeLimit]>60}
+    {
+        CheckStone;
+    };
+    #else
+    {
+        rub paste;
+        #delay {2} {
+            eat recover;
+        };
+    }
+}
+
+#ALIAS {CheckStone}
+{
+    get $stone from $bag $bagNum;
+    look $stone;
+}
+
+#ALIAS {Start} {#read holdHllStone.tin;hp;#delay {1} {HoldStoneCondition}}
+#ALIAS {Stop} {
+    Notice Stop;
+    #UNACTION {^你附近沒有這樣東西。};
+    #UNACTION {^你聽了%W的指導﹐似乎有些心得。$};
+    #UNACTION {^你將一顆%W緊緊的握在手上。};
+    #UNACTION {^你拿起一粒紅色藥丸放入口中。};
+    #UNACTION {^你找不到 %* 這樣東西。};
+    #UNACTION {^這是一顆%W的};
+}
+
+#VARIABLE {bag} {sos bag}
+#VARIABLE {bagNum} {1}
+#VARIABLE {collector} {1}
+#VARIABLE {stone} {hell stone}

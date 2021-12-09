@@ -1,0 +1,32 @@
+#ALIAS {GetBag}
+{
+	get $account bag $bagNumber;
+	#math {bagCount} {$bagCount+1};
+	look $account bag;
+}
+
+#ACTION {^裡面有﹕} {
+	drop $account bag;
+	#math {bagCount} {$bagCount-1};
+	#math {bagNumber} {$bagNumber+1};
+}
+
+#ACTION {^你附近沒有這樣東西。} {
+	StopGetBag
+}
+
+#ACTION {^這是一口由織女編織的%W($account bag)﹐可以用來裝一些雜物。} {
+	#delay {GetBag} {
+		GetBag;
+	} {0.5}
+}
+
+#ALIAS {StopGetBag} {
+	Notice kill GetBag;
+	#class GetBag kill;
+	#var ready 1;
+}
+
+#Var bagNumber 1;
+#var bagCount 0;
+Notice read GetBag

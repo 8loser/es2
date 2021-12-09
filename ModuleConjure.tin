@@ -1,0 +1,24 @@
+#ACTION {^你口中念念有詞﹐雙手更開始激烈地揮動 ...$} {
+    #math {conjureCount} {$conjureCount+1};
+    #if {$conjureCount>25} {
+        time;
+        #VARIABLE {conjureCount} {0};
+    };
+    #delay {2} {Conjure};
+}
+
+#ACTION {^{你的靈力不夠﹗|你的精力不夠!}} {
+    StopConjure
+}
+
+#ALIAS {Conjure} {
+    conjure chaotic inception;
+}
+
+#ALIAS {StopConjure} {
+    Notice Stop Conjure;
+    #class ModuleConjure kill;
+    StartTicker;
+}
+
+#VARIABLE {conjureCount} {0}

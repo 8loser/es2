@@ -1,0 +1,134 @@
+#READ reset.tin
+
+#ACTION {^你深深地吸了口氣﹐手腳活動了幾下﹐看起來有活力多了。$}
+{   
+    hp;
+    #delay {0.5} {
+        RespirateCondition;
+    };
+}
+
+#ACTION {^你閉上眼睛開始打坐。$}
+{   
+    #UNTICKER {RespirateTicker};
+}
+
+#ACTION {^你的精力已經恢復到上限了。$}
+{   
+    hp;
+    #delay {0.5} {
+        RespirateCondition;
+    };
+}
+
+#ACTION {^{你\W+站了起來。}}
+{   
+    exert regenerate;
+    #TICKER {RespirateTicker} {
+        hp;
+        #delay {1} {
+            RespirateCondition;
+        };
+    } {10};
+}
+
+#ACTION {^你研讀了一會兒﹐但是發現上面所說的對你而言都太淺了﹐沒有學到任何東西。$} {
+    Alert %0;
+    #unvar studyItem;
+}
+
+#ACTION {^你要讀什麼﹖$} {
+    Alert %0;
+    #unvar studyItem;
+}
+
+#ALIAS {Respirate} {
+    respirate $respirateValue;
+}
+
+#ALIAS {ExerciseForce} {
+    exercise $exerciseValue;
+}
+
+#ALIAS {UpdateExerciseValue}
+{
+    #math {exerciseRemaid} {$health[keeMax]*%1};
+    #if {$exerciseRemaid<=0} {
+        #var {exerciseRemaid} {20};
+    };
+
+    #math {exerciseAllow} {$health[kee]-$exerciseRemaid};
+    #math {exerciseValue} {$health[forceMax]*2-$health[force]};
+    
+    #if {$exerciseAllow>=10}{
+        #if {$exerciseAllow<$exerciseValue}{
+            #var exerciseValue $exerciseAllow;
+        };
+        #if {$exerciseValue<10}{
+            #var exerciseValue 10;
+        };    
+    };
+    #else {
+        #var exerciseValue 0;
+    };
+}
+
+#ALIAS {UpdateRespirateValue}
+{
+    #math {respirateRemaid} {$health[ginMax]*%1};
+    #if {$respirateRemaid<=0} {
+        #var {respirateRemaid} {20};
+    };
+
+    #math {respirateAllow} {$health[gin]-$respirateRemaid};
+    #math {respirateValue} {$health[atmanMax]*2-$health[atman]};
+    
+    #if {$respirateAllow>=10}{
+        #if {$respirateAllow<$respirateValue} {
+            #var respirateValue $respirateAllow;
+        };
+        #if {$respirateValue<10}{
+            #var respirateValue 10;
+        };    
+    };
+    #else {
+        #var respirateValue 0;
+    };
+}
+
+#ALIAS {RespirateCondition}
+{
+    UpdateExerciseValue 0.75;
+    UpdateRespirateValue 0.7;
+    
+    #if {@checkFood{0.5}}{
+        AddFood;
+    };
+    #elseif {@checkWater{0.5}}{
+        AddWater;
+    };
+    #elseif {$health[gin]<$health[ginMax] && $health[force]<100 && $health[keeLimit]==100 && $exerciseValue>0} {
+        ExerciseForce;
+    };
+    #elseif {$respirateValue>0}{
+        Respirate;
+    };
+    #elseif {$health[force]>0} {
+        exert regenerate;
+    };
+    #elseif {&{studyItem}} {
+        study $studyItem;
+    };
+    #else {
+        time;
+    }
+}
+
+#TICKER {RespirateTicker} {
+    hp;
+    #delay {1} {
+        RespirateCondition;
+    };
+} {10}
+
+#var studyItem {book}

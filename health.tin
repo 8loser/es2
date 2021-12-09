@@ -1,0 +1,119 @@
+#alias {ShowPrompt}
+{
+    #local tempExp 0;
+    #math {tempExp} {$exp/1000};
+    #local atmanMark +;
+    #local forceMark +;
+    #local manaMark +;
+    #if {$atmanStatus==0} { #local atmanMark - };
+    #if {$forceStatus==0} { #local forceMark - };
+    #if {$manaStatus==0} { #local manaMark - };
+
+    #show {<099><178>- $account | $learnSkill | $atmanMark$forceMark$manaMark | $studyItem | <028>exp<178> ${tempExp}K  <028>kee<178> $health[kee]  <028>fp<178> $health[force]  <028>pt <178>$potential<099> } {-2}
+}
+
+#ACTION {^ 精  ﹕%s%?%d/%s%d (%s%d%)%s靈力﹕%s%d /%s%d%s(}
+{   
+    #variable {health[gin]} {%3};
+    #variable {health[ginMax]} {%5};
+    #variable {health[ginLimit]} {%7};
+    #variable {health[atman]} {%10};
+    #variable {health[atmanMax]} {%12};
+}
+
+#ACTION {^ 氣  ﹕%s%?%d/%s%d (%s%d%)%s內力﹕%s%d /%s%d (}
+{
+    #variable {health[kee]} {%3};
+    #variable {health[keeMax]} {%5};
+    #variable {health[keeLimit]} {%7};
+    #variable {health[force]} {%10};
+    #variable {health[forceMax]} {%12};
+}
+
+#ACTION {^ 神  ﹕%s%?%d/%s%d (%s%d%)%s法力﹕%s%d /%s%d (}
+{
+    #variable {health[sen]} {%3};
+    #variable {health[senMax]} {%5};
+    #variable {health[senLimit]} {%7};
+    #variable {health[mana]} {%10};
+    #variable {health[manaMax]} {%12}
+}
+
+#ACTION {^ 食物﹕%s%d/%s%d%s潛能﹕%s%d$}
+{   
+    #variable {survival[food]} {%2};
+    #variable {survival[foodMax]} {%4};
+    #variable {potential} {%7};
+    #if {%2<%4*0.5}
+    {
+        #var addFood {1}
+    };
+    #else 
+    {
+        #var addFood {0}
+    };
+}
+
+#ACTION {^ 飲水﹕%s%d/%s%d%s經驗﹕%s%d%s/}
+{
+    #variable {survival[water]} {%2};
+    #variable {survival[waterMax]} {%4};
+    #variable {exp} {%7};
+    #if {&lastExp}
+    {
+        #nop;
+    };
+    #else
+    {
+        #VARIABLE {lastExp} {%7};
+    };
+    #if {%2<%4*0.5}
+    {
+        #var addWater {1}
+    };
+    #else 
+    {
+        #var addWater {0}
+    };
+    ShowPrompt;
+}
+
+#FUNCTION {checkFood}
+{
+    #return $survival[food] <= $survival[foodMax]*%1
+}
+
+#FUNCTION {checkWater}
+{
+    #return $survival[water] <= $survival[waterMax]*%1
+}
+
+#ACTION {^ 膂力﹕[%d (%d)]     膽識﹕[%d (%d)]     悟性﹕[%d (%d)]}
+{
+    #variable {str} {%1};
+    #variable {cou} {%3};
+    #variable {int} {%5};
+}
+
+#ACTION {^ 靈性﹕[%d (%d)]     定力﹕[%d (%d)]     容貌﹕[%d (%d)]}
+{
+    #variable {spi} {%1};
+    #variable {com} {%3};
+    #variable {per} {%5};
+}
+
+#ACTION {^ 根骨﹕[%d (%d)]     福緣﹕[%d (%d)]}
+{
+    #variable {con} {%1};
+    #variable {kar} {%3};
+}
+
+#ALIAS {AddWater}
+{
+    #4 eat ice;
+}
+
+#ALIAS {AddFood}
+{
+    #4 eat cake;
+}

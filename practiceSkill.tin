@@ -1,0 +1,113 @@
+#VARIABLE {practiceKee} {30}
+#VARIABLE {practiceForce} {3}
+#VARIABLE {practiceSkill} {dodge}
+#VARIABLE {studyItem} {book}
+#VARIABLE {studyValue} {40}
+#VARIABLE {action2} {0}
+
+#ACTION {^  內功 (force)%s﹕%s%W%s有效等級}
+{   
+    #if {"%3" == "%s無%s"}{
+        #variable {forceSkill} {0}
+    };
+    #else {
+        #variable {forceSkill} {1}
+    };
+}
+
+#ALIAS {CheckForceSkill}
+{
+    #if {&forceSkill} {
+        #nop
+    };
+    #else {
+        practice;
+	};
+}
+
+#ALIAS {UpdatePracticeTimes}
+{
+    #math {practiceTimes} {$health[kee]/$practiceKee};
+    #if {$practiceTimes>$health[force]/$practiceForce}{
+        #math {practiceTimes} {$health[force]/$practiceForce};
+    };
+	#if {$practiceTimes>30} {#VARIABLE {practiceTimes} {30}}
+}
+
+#ALIAS {PracticeLoop}
+{
+    get broken heart sword;
+    wield broken heart sword;
+    #if {%1>=1}{
+        #loop {1} {%1} {practiceCount} {
+            practice $practiceSkill;
+        };
+		#if {$forceSkill}{
+            exert recover;
+        };
+    }
+    drop broken heart sword;
+}
+
+#ALIAS {UpdateStudyTimes}
+{
+    #if {%1} {
+        #math {studyTimes} {($health[sen]-$health[senMax]*%1)/$studyValue};
+    };
+    #else {
+        #math {studyTimes} {$health[sen]/$studyValue};
+    };
+}
+
+#ALIAS {StudyFromSelf}
+{
+    #if {$studyTimes>=1}{
+        #loop {1} {$studyTimes} {studyCount} {
+            study $studyItem;
+        };
+    }
+}
+
+#ALIAS {StudyFromBag}
+{
+    #if {$studyTimes>=1}{
+        get $studyItem from book bag;
+        #loop {1} {$studyTimes} {studyCount} {
+            study $studyItem;
+        };
+        put $studyItem in book bag;
+    }
+}
+
+#ALIAS {Action2}{
+    UpdateStudyTimes 0.1;
+    StudyFromSelf;
+}
+
+#ALIAS {PracticeCondition}
+{
+	CheckForceSkill;
+	#if {@checkFood{0.5}}{
+        AddFood;
+    };
+    #elseif {@checkWater{0.5}}{
+        AddWater;
+    };
+    #elseif {$health[kee]>=$health[keeMax] || $health[force]>=$health[forceMax]}{
+        UpdatePracticeTimes;
+		PracticeLoop $practiceTimes;
+    };
+    #elseif {&action2 && $action2} {
+        Action2;
+    };
+	#else {
+		time;
+	}
+}
+
+#TICKER {PracticeTick} {
+    hp;
+    #delay {1} {
+        PracticeCondition;
+    };
+} {10}

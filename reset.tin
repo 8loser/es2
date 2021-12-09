@@ -1,0 +1,13 @@
+#UNTICKER {%*}
+#UNACTION {%*}
+#UNGAG {%*}
+#UNFUNCTION {%*}
+#UNGAG {%*}
+#UNALIAS {%*}
+#READ health.tin
+#READ alert.tin
+#READ general.tin
+#ACTION {^https://t.me/es2us$}
+{
+    drop cloth;
+}

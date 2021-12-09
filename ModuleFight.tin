@@ -1,0 +1,127 @@
+#ACTION {~^( {你|妳}\e[1;31m已經一副頭重腳輕的模樣﹐正在勉力支撐著不倒下去。\e[2;37;0m )$}
+{
+    HaltFight;
+}
+
+#ACTION {~^( {你|妳}\e[1;31m看起來已經力不從心了。\e[2;37;0m )$}
+{
+    HaltFight;
+}
+
+#ACTION {~^( {你|妳}\e[31m已經陷入半昏迷狀態﹐隨時都可能摔倒暈去。\e[2;37;0m )$}
+{
+    HaltFight;
+}
+
+#ACTION {~^( {你|妳}\e[31m搖頭晃腦、歪歪斜斜地站都站不穩﹐眼看就要倒在地上。\e[2;37;0m )$}
+{
+    HaltFight; 
+}
+
+#ACTION {~^( {你|妳}\e[1;31m似乎十分疲憊﹐看來需要好好休息了。\e[2;37;0m )$}
+{
+    HaltFight;
+}
+
+#ACTION {~^( {你|妳}\e[1;33m動作似乎開始有點不太靈光﹐但是仍然有條不紊。\e[2;37;0m )$}
+{
+    Recover;
+}
+
+#ACTION {~^( {你|妳}\e[1;33m氣喘噓噓﹐看起來狀況並不太好。\e[2;37;0m )$}
+{
+    Recover;
+}
+
+#ACTION {~^( {你|妳}\e[1;33m看起來可能有些累了。\e[2;37;0m )$}
+{
+    Recover;
+}
+
+#ACTION {~^( {你|妳}\e[1;33m看起來可能受了點輕傷。\e[2;37;0m )$}
+{
+    Recover;
+}
+
+#ACTION {^%W說道﹕既然%W賜教﹐%W只好奉陪。}
+{
+    StopTicker;
+    #VARIABLE {fightStatus} {1};
+    #VARIABLE {tempExp} {$exp};
+    #VARIABLE {tempPt} {$potential};
+}
+
+#ACTION {^%W腳下一個不穩﹐跌在地上一動也不動了。$}
+{
+    #map get {roomvnum} {currentRoom};
+    #math {gainExp} {$exp-$tempExp};
+    #math {gainPt} {$potential-$tempPt};
+    Alert {%0 $currentRoom exp: $gainExp, pt: $gainPt};
+    halt;
+    LeaveFight
+}
+
+#ACTION {^{你|妳}向後一躍﹐離開與%W的戰圈罷手不鬥了。$}
+{
+    #map get {roomvnum} {currentRoom};
+    #math {gainExp} {$exp-$tempExp};
+    #math {gainPt} {$potential-$tempPt};
+    Alert {%0 $currentRoom exp: $gainExp, pt: $gainPt};
+    LeaveFight
+}
+
+#act {^{看起來\W+並不想跟你較量。|\W+已經無法戰鬥了。|你想攻擊誰﹖}$}
+{
+    #delay {AppendFightRoomIndex}
+    {
+        #if {$fightStatus==0}{
+            AppendFightRoomIndex;
+        }
+    } {1};
+}
+
+#alias {AppendFightRoomIndex}
+{
+    #math {fightRoomIndex} {$fightRoomIndex+1};
+    #if {"$fightRoomList[$fightRoomIndex]"==""}
+    {
+        #var fightRoomIndex 1;
+    }   
+}
+
+#ALIAS {HaltFight}
+{
+    halt;halt;
+}
+
+#ALIAS {LeaveFight}
+{
+    Notice StopFight;
+    #VARIABLE {fightStatus} {0};
+    #class ModuleFight kill;
+    StartTicker;
+}
+
+#ALIAS {Recover}
+{
+    hp;
+    #delay {0.5}
+    {
+        #if {@InterruptCheck{}} {
+            HaltFight;
+        };
+        #elseif {$health[kee]<$health[keeMax]} {
+            exert recover;
+        };
+        #else {
+            time;
+        }
+    }
+}
+
+#TICKER {FightTicker} {
+    Recover;
+} {20}
+
+#VARIABLE {tempExp} {$exp};
+#VARIABLE {tempPt} {$potential};

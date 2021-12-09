@@ -1,0 +1,66 @@
+#ALIAS {Base2Waterfall} {
+	#VARIABLE {thing} {0};
+    open door;w;n;w;#6 n;#2 e;#6 n;open door;n;w;sw;w;#5 n;jump waterfall
+}
+
+#ACTION {%*慢慢地你終於又有了知覺....}
+{
+    #2 w;n;#2 w;hut;l doctor
+}
+
+#ACTION {^你要看什麼﹖$}
+{
+    Hut2Base
+}
+
+#ACTION {^  王大夫(Doctor)$}
+{
+	#if {$thing==0} {
+		ask doctor about 陳平;
+		#delay {2} {
+			ask doctor about 頑疾;
+		};
+		#delay {4} {
+			accept quest;
+		};
+		#delay {6} {
+			Hut2Healer;
+		}
+    };
+    #elseif {$thing==1}{
+        give letter to doctor;
+		#delay {2} {
+			SearchGinSeng;
+		};
+    };
+    #elseif {$thing==2}{
+        give ginseng to doctor;
+		#delay {2} {
+			Hut2Base;
+			put silk cloth in rack
+		};
+    };
+}
+
+#ALIAS {Hut2Healer} {
+    out;#2 e;s;#2 e;out;#6 s;#2 w;#8 s;se;e;#9 s;#3 w;n;open door;#3 n;give letter to healer;
+	#VARIABLE {thing} {1};
+	#delay {5} {
+		Healer2Waterfall;
+	};
+}
+
+#ALIAS {Healer2Waterfall} {
+    #2 s;open door;#2 s;#3 e;#9 n;w;nw;#8 n;#2 e;#6 n;open door;n;w;sw;w;#5 n;jump waterfall
+}
+
+#ALIAS {SearchGinSeng} {
+	#VARIABLE {thing} {2};
+	out;#2 n;#3 e;search snow ginseng;#3 w;#2 s;hut;
+}
+
+#ALIAS {Hut2Base} {
+	out;#2 e;s;#2 e;out;#6 s;#2 w;#6 s;e;s;open door;e
+}
+
+#TICKER {QuestSilkCloth} {#5 eat cake;#5 eat ice;#delay {1} {Base2Waterfall};#delay {4} {l};} {900}

@@ -1,0 +1,125 @@
+#READ reset.tin;
+#VARIABLE {studyItem} {piece}
+#VARIABLE {studyValue} {45}
+#VARIABLE {exerciseValue} {100}
+#VARIABLE {conjureStatus} {0}
+#VARIABLE {conjureValue} {100}
+
+#ACTION {^你微一凝神﹐緩緩地吸了口氣﹐看起來有精神多了。$}
+{   
+    hp;
+    #delay {1} {
+        UpdateStudyTimes 0.7;StudySkill;
+    };
+}
+
+#ACTION {^你現在精神狀況太差了﹐無法凝神專一﹗$}
+{   
+    exert refresh;
+}
+
+#ACTION {^你的神已經恢復到上限了。$}
+{   
+    study $studyItem;
+}
+
+#ALIAS {UpdateStudyTimes}
+{
+    #if {%1} {
+        #math {studyTimes} {($health[sen]-$health[senMax]*%1)/$studyValue};
+    };
+    #else {
+        #math {studyTimes} {$health[sen]/$studyValue};
+    };
+    #if {$studyTimes>30} {
+        #var {studyTimes} {30}
+    }
+}
+
+#ALIAS {StudySkill}
+{
+    StudyFromSelf;
+}
+
+#ALIAS {StudyFromBag}
+{
+    #if {$studyTimes>=1}{
+        get $studyItem from book bag;
+        #loop {1} {$studyTimes} {studyCount} {
+            study $studyItem;
+        };
+        put $studyItem in book bag;
+        exert refresh;
+    }
+}
+
+#ALIAS {StudyFromSelf}
+{
+    #if {$studyTimes>=1}{
+        #loop {1} {$studyTimes} {studyCount} {
+            study $studyItem;
+        };
+        exert refresh;
+    }
+}
+
+#ALIAS {StudyFromGround}
+{
+    #if {$studyTimes>=1}{
+        get $studyItem;
+        wield $studyItem;
+        #loop {1} {$studyTimes} {studyCount} {
+            study $studyItem;
+        };
+        #if {$health[force]>0}{
+            exert refresh;
+        };
+        drop $studyItem;
+    }
+}
+
+#ALIAS {StudyBook} {
+    #if {&studyValue}
+    {
+        UpdateStudyTimes 0.7;
+        StudyFromSelf;
+    };
+    #else
+    {
+        UpdateStudyValue;
+    }
+}
+
+#ALIAS {StudyCondition}
+{
+    UpdateStudyTimes 0.7;
+    #if {@checkFood{0.5}}{
+        AddFood;
+    };
+    #elseif {@checkWater{0.5}}{
+        AddWater;
+    };
+    #elseif {$studyTimes >= 1}{
+        StudySkill;
+    };
+    #elseif {($health[forceMax]-$health[force])>$exerciseValue && $health[kee]>($exerciseValue+50) && $health[keeLimit]==100}{
+        exercise $exerciseValue;
+    };
+    #elseif {$health[force]>0} {
+        exert refresh;
+    };
+    #else {
+        time;
+    };
+    
+    #if {$conjureStatus && $health[atman]>$conjureValue}{
+        conjure chaotic inception;
+    };
+}
+
+#TICKER {studySkill} {
+    hp;
+    #delay {1} {
+        StudyCondition;
+    };
+} {10}

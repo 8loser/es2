@@ -1,0 +1,48 @@
+#config charset BIG5TOUTF8
+#config {command echo} off
+#config {repeat enter} on
+
+#event {SEND OUTPUT} {
+	#format {xcmd} {%p} {%0};
+	#regexp {$xcmd} {^$} {#nop} {#line ignore #showme <124>$xcmd;};
+}
+
+#SPLIT
+#READ health.tin
+#READ alert.tin
+#READ general.tin
+
+#ACTION {^https://t.me/es2us$}
+{
+    drop cloth;
+}
+
+#event {SESSION CONNECTED}
+{
+	#map read es2.map;
+	#map {flag} {static} {on};
+	#map goto 682;
+}
+
+#MACRO {\eOP} {hp}
+#MACRO {\eOQ} {score}
+#MACRO {\e[21~} {exert regenerate}
+#MACRO {\e[23~} {exert recover}
+#MACRO {\e[24~} {exert refresh}
+
+#nop mapoff命令关闭所有自动画图功能，不想自动画图就执行这个命令，你就不用担心地图被弄乱了
+#ALIAS {mapoff}
+{
+        #map {flag} {static} {on};
+        #class mapper kill;
+        #echo {Room writes disabled!}
+}
+
+#nop mapon 命令激活自动画图，而且会导入我下面提供的mapper class
+#ALIAS {mapon}
+{
+        #class mapper read mapper.tin;
+        #echo {Mapping enabled!};
+        #map {flag} {static} {off}
+}
+

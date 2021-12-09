@@ -1,0 +1,50 @@
+#ALIAS {RestCondition} {
+    #if {$addFood} {
+        StopTicker;
+        AddFood;
+        StartTicker;
+    };
+    #elseif {$addWater}{
+        StopTicker;
+        AddWater;
+        StartTicker;
+    };
+    #elseif {@InterruptCheck{}} {
+        StopRest;
+    };
+    #elseif {$health[kee]<$health[keeMax] && $health[force]>0}
+    {
+        exert recover;
+    };
+    #elseif {$health[kee]>=$health[keeMax] && $health[force]>=$health[forceMax]}
+    {
+        StopRest;
+    };
+    #else
+    {
+        time;
+    }
+}
+
+#TICKER {RestTicker} {
+    hp;
+    #delay {1} {RestCondition};
+} {30}
+
+#ALIAS {Rest} {
+    #map get {roomvnum} {currentRoom};
+    #if {"$currentRoom"!="$safeRoom"}
+    {
+        #event {END OF RUN}
+        {
+            #unevent {END OF RUN};
+        };
+        #map run {$safeRoom};
+    };
+}
+
+#ALIAS {StopRest} {
+    Notice Stop Rest;
+    #class ModuleRest kill;
+    StartTicker;
+}

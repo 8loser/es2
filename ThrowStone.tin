@@ -1,0 +1,81 @@
+#ALIAS {GetBag}
+{
+	get $account bag $bagNumber;
+	#var dropBag 1;
+	look $account bag;
+}
+
+#ACTION {^裡面有﹕} {
+	#unvar dropBag;
+}
+
+#ACTION {^你附近沒有這樣東西。} {
+	StopGetBag;
+	#unvar contGetBag;
+}
+
+#ACTION {^這是一口由織女編織的%W($account bag)﹐可以用來裝一些雜物。} {
+	#delay {GetBag} {
+		#if {&dropBag} {drop bag;#math {bagNumber} {$bagNumber+1}};
+		#if {&contGetBag} {GetBag};
+	} {0.5}
+}
+
+#ALIAS {StopGetBag} {
+	Notice Stop GetBag;
+}
+
+#ALIAS {ThrowStone} {
+	SafeRoom;
+	#delay {2} {GetBag};
+	#delay {4} {
+		#var bagNumber 1;
+		get 10 gold;
+		Run 730;w;
+	};
+	#delay {6} {
+		get all from $account bag;
+		throw soul stone;
+	};
+}
+
+#ACTION {^{你身上沒有這東西。|那裡面沒有任何東西。}$}
+{
+	#math {bagNumber} {$bagNumber+1};
+	get all from $account bag $bagNumber;
+}
+
+#ACTION {^你向翡翠池扔了一塊魔魂石，但卻掉了在地上，你只好將其撿起來。$}
+{
+	e;SafeRoom;
+	#delay {2} {
+		get 1 cash;
+	};
+	#delay {4} {
+		Run 730;w;throw soul stone;
+	};
+}
+
+#ACTION {^你向翡翠池扔了一塊魔魂石，濺起的水花透出神秘的黃光，魔魂石慢慢地在光線中消失了。$}
+{
+	#math {throwCount} {$throwCount+1};
+	#if {$throwCount>25} {time;#var throwCount 0};
+	throw soul stone;
+}
+
+#ACTION {^你從%W布袋中拿出一顆%W石。$} {
+	#delay {GetStone} {
+		throw soul stone;
+	} {1};
+}
+
+#ACTION {^你找不到 $account bag %d 這樣東西。$}
+{
+	e;SafeRoom;
+}
+
+#var bagNumber 1;
+#var contGetBag 1;
+#var throwCount 0;
+
+Notice read GetBag

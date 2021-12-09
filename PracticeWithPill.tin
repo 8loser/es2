@@ -1,0 +1,40 @@
+#ACTION {^{你的\W+進步了﹗}$} {
+    #math {practiceCount} {$practiceCount+1};
+    #if {$practiceCount>25} {
+        time;
+        #VARIABLE {practiceCount} {0};
+    };
+    Practice;
+}
+
+#ACTION {^你這項技能已不能靠練習而進步了。$} {
+    Alert %0;
+    #unvar practiceSkill;
+    StopPractice
+}
+
+#ACTION {^{你的\W+不夠﹐不能練\W+。}$} {
+    exert recover;
+}
+
+#ACTION {^你深深吸了幾口氣﹐臉色看起來好多了。$} {
+    Practice;
+}
+
+#ACTION {^你的內力不夠。$} {
+    s;
+    get 1 super force ball;
+    n;
+    eat ball;
+    skills;
+}
+
+#ACTION {^你感到身體裡有一股強大的內力產生。$} {
+    #delay {2} {exert recover;Practice}
+}
+
+#ALIAS {Practice} {
+    practice $practiceSkill;
+}
+
+#VARIABLE {practiceCount} {0}

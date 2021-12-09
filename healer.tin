@@ -1,0 +1,198 @@
+#READ reset.tin
+#ACTION {^【故事】%W} {
+    #regex {%1} {的基本會員！}
+    {#nop}
+    {
+        #var warStatus {1};
+        #delay {clearWarStatus} {#unvar warStatus} {900};
+    };
+
+    #if {"%0"=="【故事】軍師說道：「啟稟鬼王, 有人獻出生命跟我們定約, 是否現在就出兵？」"}
+    {
+        #var warLevel {1}
+    };
+    #elseif {"%0"=="【故事】侮天鬼王說道：「等一下！！！」"}
+    {
+        #var warLevel {2}
+    };
+    #elseif {"%0"=="【故事】侮天鬼王說道：「妳不是不知道天朝這些傢伙有多討厭～」"}
+    {
+        #var warLevel {3}
+    };
+    #elseif {"%0"=="【故事】白毛殭屍說道：「夢魔戰死了。」"}
+    {
+        #var warLevel {4}
+    }
+}
+
+#ACTION {^以下為本次天朝勇士的傷害排名：}
+{
+    #unvar warStatus;
+}
+
+#ALIAS {FightMob}
+{
+    #map get {roomvnum} {currentRoom};
+    #if {"$currentRoom"=="$fightRoomList[$fightRoomIndex][1]"}
+    {
+        #foreach {$fightRoomList[$fightRoomIndex][2]} {mob} {fight $mob}
+    };
+    #else
+    {
+        #event {END OF RUN}
+        {
+            #unevent {END OF RUN};
+            #foreach {$fightRoomList[$fightRoomIndex][2]} {mob} {fight $mob}
+        };
+        #map run {$fightRoomList[$fightRoomIndex][1]} {0.1};
+    };
+}
+
+#ALIAS {LearnSkill}
+{
+    #map get {roomvnum} {currentRoom};
+    #if {"$currentRoom"=="$masterRoom"}
+    {
+        LearnFromMaster;
+    };
+    #else
+    {
+        #event {END OF RUN}
+        {
+            #unevent {END OF RUN};
+            LearnFromMaster;
+        };
+        #map find {roomnote} {%i%*$master%*};
+        #path run 0.1;
+    }
+}
+
+#ALIAS {Condition}
+{
+    #if {$addFood} {
+        StopTicker;
+        AddFood;
+        StartTicker;
+    };
+    #elseif {$addWater}{
+        StopTicker;
+        AddWater;
+        StartTicker;
+    };
+    #elseif {!&{warStatus}}
+    {
+        #if {$potential >= 20 && !&{learnPass}}{
+            Notice Start Learn;
+            StopTicker;
+            #class ModuleLearn read ModuleLearn.tin;
+            LearnSkill;
+        };
+        #elseif {$health[sen]>=$health[senMax] && $fightStatus==0 && &{studyItem}}
+        {
+            Notice Start Study;
+            StopTicker;
+            #class ModuleStudy read ModuleStudy.tin;
+            StudyItem;
+        };
+        #elseif {$health[kee] >= $health[keeMax] && $health[keeLimit]==100}
+        {
+            Notice Start Fight;
+            #class ModuleFight read ModuleFight.tin;
+            FightMob;
+        };
+        #elseif {$health[kee]<$health[keeMax] && $health[force]>0}
+        {
+            exert recover;
+        };
+        #elseif {$health[force]==0}
+        {
+            StopTicker;
+            #class Cultivate read Cultivate.tin;
+            StartCultivate;
+        };
+        #else {
+            time;
+        };
+    };
+    #elseif {$warStatus}
+    {
+        StopTicker;
+        #class Cultivate read Cultivate.tin;
+        StartCultivate;
+    };
+    #else {
+        time
+    }
+}
+
+
+#ALIAS {StopTicker}
+{
+    Notice Stop Ticker;
+    #class {%*} kill;
+    #UNTICKER {ConditionTicker};
+}
+
+#ALIAS {StartTicker}
+{
+    Notice Start Ticker;
+    #TICKER {ConditionTicker} {
+        hp;
+        #delay {1} {Condition};
+    } {10}
+}
+
+#function {InterruptCheck}
+{
+	#if {$potential>=80 || &{warStatus}}
+	{
+        #return 1;
+	};
+	#elseif {$health[sen]>=$health[senMax] && &{studyItem}}
+    {
+        #return 1;
+    };
+    #else {
+        #return 0;
+    };
+}
+
+#function {CultivateInterrupt}
+{
+    #if {&warStatus}
+    {
+        #return 0;
+    };
+    #elseif {$health[kee]>=$health[keeMax] && $health[force]>=$health[forceMax]}
+    {
+        #return 1;
+    };
+    #else {
+        #return 0;
+    };
+}
+
+#unvar interrupt;
+#unvar warStatus;
+
+#unvar learnPass;
+#unvar learnSkill;
+#var masterRoom {322}
+#var master {healer}
+
+#var atmanStatus 1;
+#var forceStatus 1;
+#var manaStatus 1;
+
+#VARIABLE {fightStatus} {0};
+#var fightRoomIndex 1;
+#variable {fightRoomList}
+{
+  {1}{{1}{769}{2}{yushou}}
+  {2}{{1}{768}{2}{fochin}}
+  {3}{{1}{766}{2}{maysan}}
+  {4}{{1}{760}{2}{ren}}
+}
+
+#unvar studyItem;
+#var practiceSkill {dodge};

@@ -1,0 +1,52 @@
+#ACTION {^{你研讀有關\W+的技巧﹐似乎有點心得。}$} {
+    #math {studyCount} {$studyCount+1};
+    #if {$studyCount>25} {
+        time;
+        #VARIABLE {studyCount} {0};
+    };
+    StudyItem
+}
+
+#ACTION {^你無法在戰鬥中專心下來研讀新知﹗$} {
+    halt;halt;StopStudy
+}
+
+#ACTION {^你現在過於疲倦﹐無法專心下來研讀新知。$} {
+    StopStudy
+}
+
+#ACTION {^你研讀了一會兒﹐但是發現上面所說的對你而言都太淺了﹐沒有學到任何東西。$} {
+    Alert %0;
+    #unvar studyItem;
+    StopStudy
+}
+
+#ACTION {^你的「內功心法」進步了﹗} {
+    #var forceStatus 1;
+}
+
+#ACTION {^你的「法術」進步了﹗} {
+    #var atmanStatus 1;
+}
+
+#ACTION {^你的「咒術」進步了﹗} {
+    #var manaStatus 1;
+}
+
+#ACTION {^你要讀什麼﹖$} {
+    Alert %0;
+    #unvar studyItem;
+    StopStudy
+}
+
+#ALIAS {StudyItem} {
+    study $studyItem;
+}
+
+#ALIAS {StopStudy} {
+    Notice Stop Study;
+    #class ModuleStudy kill;
+    StartTicker;
+}
+
+#VARIABLE {studyCount} {0}

@@ -1,0 +1,114 @@
+#READ reset.tin
+
+#UNVARIABLE {studyValue}
+#VARIABLE {studyStatus} {0}
+#VARIABLE {studyItem} {book}
+
+#ACTION {^你盤膝坐了下來﹐%W。$}
+{   
+    #UNTICKER {exerciseForce};
+}
+
+#ACTION {^你%W﹐站了起來。$}
+{   
+    #TICKER {exerciseForce} {
+        hp;
+        #delay {1} {
+            ExerciseForce;
+        };
+    } {10}
+}
+
+#ALIAS {UpdateExerciseValue}
+{
+    #math {exerciseValue} {$health[forceMax]*2-$health[force]};
+    #if {$exerciseValue<10}{
+        #var exerciseValue 10;
+    };
+    #if {$exerciseValue > $health[keeMax]*%1} {
+        #math {exerciseValue} {$health[keeMax]*%1};
+    };
+}
+
+#ALIAS {UpdateStudyTimes}
+{
+    #if {%1} {
+        #math {studyTimes} {($health[sen]-$health[senMax]*%1)/$studyValue};
+    };
+    #else {
+        #math {studyTimes} {$health[sen]/$studyValue};
+    };
+}
+
+#ALIAS {StudyFromSelf}
+{
+    #if {$studyTimes>=1}{
+        #loop {1} {$studyTimes} {studyCount} {
+            study $studyItem;
+        };
+    }
+}
+
+#ALIAS {StudyFromBag}
+{
+    #if {$studyTimes>=1}{
+        get $studyItem from book bag;
+        #loop {1} {$studyTimes} {studyCount} {
+            study $studyItem;
+        };
+        put $studyItem in book bag;
+    }
+}
+
+#ALIAS {UpdateStudyValue}
+{
+    hp;
+    #delay {0.5} {
+        #VARIABLE {studyValue} {$health[sen]};
+        study $studyItem;
+        hp;
+        #delay {0.5} {
+            #math {studyValue} {$studyValue-$health[sen]};
+        };
+    };
+}
+
+#ALIAS {StudyBook} {
+    #if {&studyValue}
+    {
+        UpdateStudyTimes 0.7;
+        StudyFromSelf;
+    };
+    #else
+    {
+        UpdateStudyValue;
+    }
+}
+
+#ALIAS {ExerciseForce}
+{
+    UpdateExerciseValue 0.8;
+    #if {@checkFood{0.5}}{
+        AddFood;
+    };
+    #elseif {@checkWater{0.5}}{
+        AddWater;
+    };
+    #elseif {$health[kee]>=$exerciseValue+40}{
+        exercise $exerciseValue;
+    };
+    #elseif {$health[kee]==$health[keeMax]&&$health[keeLimit]==100}{
+        #math {exerciseValue} {$health[kee]*0.8};
+        exercise $exerciseValue;
+    };
+    #elseif {$studyStatus} {
+        StudyBook;
+    };
+}
+
+#TICKER {exerciseForce} {
+    hp;
+    #delay {1} {
+        ExerciseForce;
+    };
+} {10}

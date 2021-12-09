@@ -1,0 +1,130 @@
+#READ reset.tin
+#VARIABLE {conjureStatus} {0}
+#VARIABLE {conjureValue} {100}
+
+#ACTION {^你微一凝神﹐緩緩地吸了口氣﹐看起來有精神多了。$}
+{   
+    hp;
+    #delay {0.5} {
+        MeditateCondition;
+    };
+}
+
+#ACTION {^你現在精神狀況太差了﹐無法凝神專一﹗$}
+{   
+    exert refresh;
+}
+
+#ACTION {^你的神已經恢復到上限了。$}
+{   
+    hp;
+    #delay {0.5} {
+        MeditateCondition;
+    };
+}
+
+#ACTION {^你%W﹐站了起來。$}
+{   
+    exert refresh;
+    #TICKER {meditateMana} {
+        hp;
+        #delay {1} {
+            MeditateCondition;
+        };
+    } {10};
+}
+
+#ACTION {^你盤膝坐了下來﹐%W。$}
+{   
+    #UNTICKER {meditateMana};
+}
+
+#ALIAS {MeditateMana} {
+    meditate $meditateValue;
+}
+
+#ALIAS {ExerciseForce} {
+    exercise $exerciseValue;
+}
+
+#ALIAS {UpdateExerciseValue}
+{
+    #math {exerciseRemaid} {$health[keeMax]*%1};
+    #if {$exerciseRemaid<=0} {
+        #var {exerciseRemaid} {20};
+    };
+
+    #math {exerciseAllow} {$health[kee]-$exerciseRemaid};
+    #math {exerciseValue} {$health[forceMax]*2-$health[force]};
+    
+    #if {$exerciseAllow>=10}{
+        #if {$exerciseAllow<$exerciseValue}{
+            #var exerciseValue $exerciseAllow;
+        };
+        #if {$exerciseValue<10}{
+            #var exerciseValue 10;
+        };    
+    };
+    #else {
+        #var exerciseValue 0;
+    };
+}
+
+#ALIAS {UpdateMeditateValue}
+{
+    #math {meditateRemaid} {$health[senMax]*%1};
+    #if {$meditateRemaid<=0} {
+        #var {meditateRemaid} {20};
+    };
+
+    #math {meditateAllow} {$health[sen]-$meditateRemaid};
+    #math {meditateValue} {$health[manaMax]*2-$health[mana]};
+    
+    #if {$meditateAllow>=10}{
+        #if {$meditateAllow<$meditateValue} {
+            #var meditateValue $meditateAllow;
+        };
+        #if {$meditateValue<10}{
+            #var meditateValue 10;
+        };    
+    };
+    #else {
+        #var meditateValue 0;
+    };
+}
+
+#ALIAS {MeditateCondition}
+{
+    UpdateExerciseValue 0.75;
+    UpdateMeditateValue 0.7;
+
+    #if {$conjureStatus && $health[atman]>$conjureValue}{
+        conjure chaotic inception;
+    };
+    
+    #if {@checkFood{0.5}}{
+        AddFood;
+    };
+    #elseif {@checkWater{0.5}}{
+        AddWater;
+    };
+    #elseif {$health[sen]<$health[senMax] && $health[force]<100 && $health[keeLimit]==100 && $exerciseValue>0} {
+        ExerciseForce;
+    };
+    #elseif {$meditateValue>0}{
+        MeditateMana;
+    };
+    #elseif {$health[force]>0} {
+        exert refresh;
+    };
+    #else {
+        time;
+    };
+}
+
+#TICKER {meditateMana} {
+    hp;
+    #delay {1} {
+        MeditateCondition;
+    };
+} {10}

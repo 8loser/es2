@@ -1,0 +1,102 @@
+#ACTION {^你聽了%W的指導﹐似乎有些心得。$}
+{
+    #math {learnCount} {$learnCount+1};
+    #if {$learnCount>25} {
+        time;
+        #VARIABLE {learnCount} {0};
+    };
+    LearnFromMaster;
+}
+
+#ACTION {^你今天太累了﹐結果什麼也沒有學到。$} {
+    exert regenerate;
+}
+
+#ACTION {^{(你|妳)深深地吸了口氣﹐手腳活動了幾下﹐看起來有活力多了。}$} {
+    LearnFromMaster
+}
+
+#ACTION {^你的潛能已經發揮到極限了﹐沒有辦法再成長了。$} {
+    StopLearn
+}
+
+#ACTION {^{你的\W+太少﹐無法修煉\W+。}$} {
+    Alert %0;
+    #var learnPass {1};
+    #delay {300} {
+        #unvar learnPass;
+    };
+    StopLearn;
+}
+
+#ACTION {^{也許是缺乏實戰經驗﹐你對\W+的回答總是無法領會。|\W+不願意教你這項技能。}$} {
+    AppendLearnSkillIndex;
+    LearnFromMaster;
+}
+
+#ACTION {^這項技能你恐怕必須找別人學了。} {
+    AppendLearnSkillIndex;
+    LearnFromMaster;
+}
+
+#ACTION {^你的「內功心法」進步了﹗} {
+    #var forceStatus 1;
+}
+
+#ACTION {^你的「法術」進步了﹗} {
+    #var atmanStatus 1;
+}
+
+#ACTION {^你的「咒術」進步了﹗} {
+    #var manaStatus 1;
+}
+
+#alias {AppendLearnSkillIndex}
+{
+    Notice AppendLearnSkillIndex;
+    #math {learnSkillIndex} {$learnSkillIndex+1};
+    #var learnSkill $learnSkillList[$learnSkillIndex];
+    #if {"$learnSkillList[$learnSkillIndex]"==""}
+    {
+        Alert {learn Pass};
+        #var learnPass {1};
+        #delay {300} {
+            #unvar learnPass;
+        };
+        StopLearn;
+    }   
+}
+
+#ACTION {^你要向誰求教﹖$} {
+    StopLearn
+}
+
+#ACTION {^你的內力不夠。} {
+    StopLearn
+}
+
+#ALIAS {LearnFromMaster}
+{
+    learn $learnSkill from $master;
+}
+
+#ALIAS {StopLearn}
+{
+    Notice StopLearn;
+    #class ModuleLearn kill;
+    StartTicker;
+}
+
+#VARIABLE {learnCount} {0}
+#VARIABLE {learnSkillIndex} {1}
+
+#list {learnSkillList} {clear}
+#foreach {force;dodge;parry;magic;spells} {skill} {#list {learnSkillList} {add} {$skill}}
+#if {&{learnSkill}}{
+    #var learnSkill $learnSkill;
+    #list {learnSkillList} {insert} {1} {$learnSkill}
+};
+
+#if {!&{master}}{
+    #var master master;
+};

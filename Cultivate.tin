@@ -1,0 +1,218 @@
+#ACTION {^{(你|妳)\W+站了起來。}$}
+{   
+    #TICKER {CultivateTicker} {
+		hp;
+		#delay {1} {
+			CultivateCondition;
+		};
+	} {10}
+}
+
+#ACTION {^你現在精力不夠%W} {
+	exert regenerate;
+}
+
+#ACTION {^你現在體力狀況太差了﹐無法負荷冥思所需要的能量﹗} {
+    exert regenerate;
+}
+
+#ACTION {^你現在身體狀況太差了%W} {
+	exert recover;
+}
+
+#ACTION {^你現在精神狀況太差了%W} {
+	exert refresh;
+}
+
+#ACTION {^{(你|妳)盤膝坐了下來﹐\W+。|(你|妳)閉上眼睛開始打坐。}$}
+{   
+    #UNTICKER {CultivateTicker};
+}
+
+#ACTION {^{你忽然覺得一陣天旋地轉﹐頭漲得像要裂開一樣﹐似乎靈力的修行已經遇到了瓶頸。|你不會練靈力的方法, 先去學吧.}}
+{
+    Alert %0;
+    #var atmanStatus 0;
+}
+
+#ACTION {^{你的神識周遊遍佈四方六合﹐但是對你的修為並沒有產生幫助。|你沒學過冥思....}}
+{
+    Alert %0;
+    #var manaStatus 0;
+}
+
+#ACTION {^當你的內息遍佈全身經脈時卻沒有功力提昇的跡象﹐似乎內力修為已經遇到了瓶頸。}
+{
+    Alert %0;
+    #var forceStatus 0;
+}
+
+#ACTION {^你的「內功心法」進步了﹗} {
+    #var forceStatus 1;
+}
+
+#ACTION {^你的「法術」進步了﹗} {
+    #var atmanStatus 1;
+}
+
+#ACTION {^你的「咒術」進步了﹗} {
+    #var manaStatus 1;
+}
+
+#ALIAS {MeditateMana} {
+    meditate $meditateValue;
+}
+
+#ALIAS {ExerciseForce} {
+    exercise $exerciseValue;
+}
+
+#ALIAS {RespirateAtman} {
+	respirate $respirateValue;
+}
+
+#ALIAS {UpdateExerciseValue}
+{
+    #math {exerciseRemaid} {$health[keeMax]*%1};
+    #if {$exerciseRemaid<=0} {
+        #var {exerciseRemaid} {20};
+    };
+
+    #math {exerciseAllow} {$health[kee]-$exerciseRemaid};
+    #math {exerciseValue} {$health[forceMax]*2-$health[force]};
+    
+    #if {$exerciseAllow>=10}{
+        #if {$exerciseAllow<$exerciseValue}{
+            #var exerciseValue $exerciseAllow;
+        };
+        #if {$exerciseValue<10}{
+            #var exerciseValue 10;
+        };    
+    };
+    #else {
+        #var exerciseValue 0;
+    };
+}
+
+#ALIAS {UpdateMeditateValue}
+{
+    #math {meditateRemaid} {$health[senMax]*%1};
+    #if {$meditateRemaid<=0} {
+        #var {meditateRemaid} {20};
+    };
+
+    #math {meditateAllow} {$health[sen]-$meditateRemaid};
+    #math {meditateValue} {$health[manaMax]*2-$health[mana]};
+    
+    #if {$meditateAllow>=10}{
+        #if {$meditateAllow<$meditateValue} {
+            #var meditateValue $meditateAllow;
+        };
+        #if {$meditateValue<10}{
+            #var meditateValue 10;
+        };    
+    };
+    #else {
+        #var meditateValue 0;
+    };
+}
+
+#ALIAS {UpdateRespirateValue}
+{
+    #math {respirateRemaid} {$health[ginMax]*%1};
+    #if {$respirateRemaid<=0} {
+        #var {respirateRemaid} {20};
+    };
+
+    #math {respirateAllow} {$health[gin]-$respirateRemaid};
+    #math {respirateValue} {$health[atmanMax]*2-$health[atman]};
+    
+    #if {$respirateAllow>=10}{
+        #if {$respirateAllow<$respirateValue} {
+            #var respirateValue $respirateAllow;
+        };
+        #if {$respirateValue<10}{
+            #var respirateValue 10;
+        };    
+    };
+    #else {
+        #var respirateValue 0;
+    };
+}
+
+#ALIAS {CultivateCondition}
+{
+    UpdateExerciseValue 0.75;
+    UpdateMeditateValue 0.75;
+	UpdateRespirateValue 0.75;
+
+	#if {@CultivateInterrupt{}} {
+		StopCultivate;
+	};
+    #elseif {@checkFood{0.5}}{
+        AddFood;
+    };
+    #elseif {@checkWater{0.5}}{
+        AddWater;
+    };
+    #elseif {$atmanStatus==1 && $health[gin]>=$health[ginMax]} {
+        RespirateAtman;
+    };
+    #elseif {$manaStatus==1 && $health[sen]>=$health[senMax]>} {
+        MeditateMana;
+    };
+	#elseif {$forceStatus==1 && $health[kee]>=$health[keeMax]} {
+        ExerciseForce;
+    };
+    #elseif {$atmanStatus==1 && $health[ginLimit]>=100 && $respirateValue>0 } {
+        RespirateAtman;
+    };
+    #elseif {$manaStatus==1 && $health[senLimit]>=100 && $meditateValue>0} {
+        MeditateMana;
+    };
+	#elseif {$forceStatus==1 && $health[keeLimit]>=100 && $exerciseValue>0} {
+        ExerciseForce;
+    };
+    #else {
+        time;
+    };
+}
+
+#ALIAS {StartCultivate} {
+    Notice Start Cultivate;
+    #map get {roomvnum} {currentRoom};
+    #if {"$currentRoom"!="$safeRoom"}
+    {
+        #event {END OF RUN}
+        {
+            #unevent {END OF RUN};
+        };
+        #map run {$safeRoom};
+    };
+}
+
+#ALIAS {StopCultivate} {
+	Notice Stop Cultivate;
+    #class Cultivate kill;
+	#UNTICKER {CultivateTicker};
+    StartTicker;
+}
+
+#TICKER {CultivateTicker} {
+    hp;
+    #delay {1} {
+        CultivateCondition;
+    };
+} {10}
+
+#if {!&{atmanStatus}}{
+    #var atmanStatus 1;
+};
+
+#if {!&{forceStatus}}{
+    #var forceStatus 1;
+};
+
+#if {!&{manaStatus}}{
+    #var manaStatus 1;
+};

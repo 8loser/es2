@@ -1,0 +1,38 @@
+#ACTION {^{你的\W+進步了﹗}$} {
+    #math {practiceCount} {$practiceCount+1};
+    #if {$practiceCount>25} {
+        time;
+        #VARIABLE {practiceCount} {0};
+    };
+    Practice;
+}
+
+#ACTION {^你這項技能已不能靠練習而進步了。$} {
+    Alert %0;
+    #unvar practiceSkill;
+    StopPractice
+}
+
+#ACTION {^{你的\W+不夠了﹐休息一下再練吧。}$} {
+    StopPractice
+}
+
+#ACTION {^{你的\W+不夠﹐不能練\W+。}$} {
+    StopPractice
+}
+
+#ACTION {^{你沒有足夠的\W+練\W+。}$} {
+    StopPractice
+}
+
+#ALIAS {Practice} {
+    practice $practiceSkill;
+}
+
+#ALIAS {StopPractice} {
+    Notice Stop Practice;
+    #class ModulePractice kill;
+    StartTicker;
+}
+
+#VARIABLE {practiceCount} {0}

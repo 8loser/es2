@@ -1,0 +1,51 @@
+#ALIAS {Alert}
+{
+    #format fileDate {%t} {%Y-%m-%d};
+    #format datetime {%t} {%H:%M:%S};
+    #line log alert_$fileDate.log {$datetime $account %1};
+}
+
+#ACTION {^%W(%w)告訴你﹕%*} { Alert %0; }
+
+#ACTION {^你這項技能已不能靠練習而進步了。$} { Alert %0; }
+
+#ACTION {^也許是缺乏實戰經驗%*無法領會。$} { Alert %0; }
+
+#ACTION {^當你的內息遍佈全身經脈時卻沒有功力提昇的跡象﹐似乎內力修為已經遇到了瓶頸。} { Alert %0; }
+
+#ACTION {^你研讀了一會兒﹐但是發現上面所說的對你而言都太淺了﹐沒有學到任何東西。$} { Alert %0; }
+
+#ACTION {^這個方向沒有出路。$} { Alert %0; }
+
+#ACTION {^你要向誰求教﹖$} { Alert %0; }
+
+#ACTION {^你想攻擊誰﹖$} { Alert %0; }
+
+#ACTION {^你的眼前一黑﹐接著什麼也不知道了....$} {
+    Alert %0;
+    #config log plain;
+    #buffer write {$account.log};
+}
+
+#ACTION {^你要吃什麼？$} { Alert %0; }
+
+#ACTION {^你要讀什麼﹖$} { Alert %0; }
+
+#ACTION {^這項技能你的程度已經不輸你師父了。$} { Alert %0; }
+
+#ACTION {^你的神識周遊遍佈四方六合﹐但是對你的修為並沒有產生幫助。$} { Alert %0; }
+
+#ACTION {^你忽然覺得一陣天旋地轉﹐頭漲得像要裂開一樣﹐似乎靈力的修行已經遇到了瓶頸。$}
+{
+    Alert %0;
+}
+
+#ACTION {^你中的%W發作了﹗$} {Alert %0;}
+
+#ACTION {^你死了。}
+{
+    Alert %0;
+    #untick %*;
+    #config log plain;
+    #buffer write {$account.log};
+}
